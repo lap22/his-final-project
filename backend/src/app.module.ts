@@ -11,7 +11,16 @@ import { MedicalRecordsModule } from './medical-records/medical-records.module';
 import { AiChatModule } from './ai-chat/ai-chat.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, UsersModule, PatientsModule, DoctorsModule, AppointmentsModule, MedicalRecordsModule, AiChatModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
+    UsersModule,
+    PatientsModule,
+    DoctorsModule,
+    AppointmentsModule,
+    MedicalRecordsModule,
+    AiChatModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

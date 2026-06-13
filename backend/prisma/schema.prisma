@@ -11,11 +11,260 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  APPOINTMENT
+  MEDICAL_RECORD
+  AI_CHAT
+  SYSTEM
+}
+
+model Role {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  users User[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  fullName String
+  email    String  @unique
+  password String
+  phone    String? @unique
+
+  gender   Gender?
+  birthday DateTime?
+
+  avatar String?
+
+  status UserStatus @default(ACTIVE)
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  patient Patient?
+  doctor  Doctor?
+
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Patient {
+  id Int @id @default(autoincrement())
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  address   String?
+  bloodType String?
+
+  emergencyContact String?
+  insuranceNumber  String?
+
+  appointments    Appointment[]
+  medicalRecords  MedicalRecord[]
+  aiChatHistories AIChatHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Doctor {
+  id Int @id @default(autoincrement())
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  specialization String
+
+  qualification String?
+
+  experience Int?
+
+  description String?
+
+  schedules      DoctorSchedule[]
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DoctorSchedule {
+  id Int @id @default(autoincrement())
+
+  doctorId Int
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+
+  workingDate DateTime
+
+  startTime String
+
+  endTime String
+
+  maxPatient Int
+
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id Int @id @default(autoincrement())
+
+  patientId Int
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  doctorId Int
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+
+  scheduleId Int
+  schedule   DoctorSchedule @relation(fields: [scheduleId], references: [id])
+
+  appointmentDate DateTime
+
+  reason String?
+
+  aiSummary String?
+
+  status AppointmentStatus @default(PENDING)
+
+  symptoms AppointmentSymptom[]
+
+  medicalRecord MedicalRecord?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppointmentSymptom {
+  id Int @id @default(autoincrement())
+
+  appointmentId Int
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  symptom String
+}
+
+model MedicalRecord {
+  id Int @id @default(autoincrement())
+
+  appointmentId Int @unique
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  patientId Int
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  doctorId Int
+
+  doctor Doctor @relation(fields: [doctorId], references: [id])
+
+  diagnosis String
+
+  examinationResult String?
+
+  note String?
+
+  prescriptions Prescription[]
+
+  files MedicalFile[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+
+model Prescription {
+  id Int @id @default(autoincrement())
+
+  medicalRecordId Int
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id])
+
+  medicineName String
+
+  dosage String
+
+  quantity Int
+
+  instruction String
+}
+
+model MedicalFile {
+  id Int @id @default(autoincrement())
+
+  medicalRecordId Int
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id])
+
+  fileName String
+
+  fileUrl String
+
+  fileType String
+}
+
+model AIChatHistory {
+  id Int @id @default(autoincrement())
+
+  patientId Int
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  question String
+
+  answer String
+
+  summary String?
+
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+
+  userId Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  title String
+
+  content String
+
+  type NotificationType
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
 }

@@ -5,11 +5,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const config = new DocumentBuilder()
-  .setTitle('HIS API')
-  .setDescription('The HIS API description')
-  .setVersion('1.0')
-  .addBearerAuth()
-  .build();
+    .setTitle('HIS API')
+    .setDescription('The HIS API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
   const app = await NestFactory.create(AppModule);
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
