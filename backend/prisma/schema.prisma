@@ -69,6 +69,7 @@ model User {
 
   patient Patient?
   doctor  Doctor?
+  refreshTokens RefreshToken[]
 
   notifications Notification[]
 
@@ -126,9 +127,9 @@ model DoctorSchedule {
 
   workingDate DateTime
 
-  startTime String
+  startTime DateTime
 
-  endTime String
+  endTime DateTime
 
   maxPatient Int
 
@@ -173,6 +174,8 @@ model AppointmentSymptom {
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   symptom String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MedicalRecord {
@@ -267,4 +270,19 @@ model Notification {
   isRead Boolean @default(false)
 
   createdAt DateTime @default(now())
+}
+model RefreshToken {
+  id Int @id @default(autoincrement())
+
+  token String @unique
+
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+
+  expiresAt DateTime
+
+  isRevoked Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
