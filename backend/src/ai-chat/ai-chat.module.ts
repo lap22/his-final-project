@@ -4,6 +4,6 @@ import { AiChatService } from './ai-chat.service';
 
 @Module({
   controllers: [AiChatController],
-  providers: [AiChatService]
+  providers: [AiChatService],
 })
 export class AiChatModule {}

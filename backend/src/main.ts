@@ -4,21 +4,31 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const config = new DocumentBuilder()
-  .setTitle('HIS API')
-  .setDescription('The HIS API description')
-  .setVersion('1.0')
-  .addBearerAuth()
-  .build();
+  // 1. Khởi tạo app phải luôn luôn nằm ĐẦU TIÊN
   const app = await NestFactory.create(AppModule);
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+
+  // 2. Cấu hình các Middleware toàn cục (ValidationPipe)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
     }),
   );
-  await app.listen(process.env.PORT ?? 3000);
+
+  // 3. Cấu hình Swagger tài liệu API
+  const config = new DocumentBuilder()
+    .setTitle('HIS API')
+    .setDescription('The HIS API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  // 4. Hàm listen kích hoạt server phải luôn luôn nằm CUỐI CÙNG
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`🚀 Server đang chạy tại: http://localhost:${port}`);
+  console.log(`📝 Tài liệu Swagger API tại: http://localhost:${port}/api`);
 }
 bootstrap();
