@@ -22,4 +22,12 @@ export class RegisterDto {
   @ApiProperty({ example: 'John Doe' })
   @IsNotEmpty({ message: 'Tên không được để trống!' })
   name!: string;
+
+  @ApiProperty({
+    example: 3,
+    description: '1: ADMIN, 2: DOCTOR, 3: PATIENT',
+    required: false,
+  })
+  @IsNotEmpty({ message: 'RoleId' })
+  roleId!: number;
 }
