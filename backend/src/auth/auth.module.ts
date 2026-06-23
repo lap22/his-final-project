@@ -6,23 +6,35 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/auth.guard';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     TypeOrmModule.forFeature([User]),
-    JwtModule.register({
-      global: true, // Cho phép dùng JwtService ở các module khác mà không cần import lại
-      secret: 'SECRET_KEY_CUA_BAN_O_DAY', // Thực tế nên dùng ConfigService để lấy từ file .env
-      signOptions: { expiresIn: '1d' }, // Token có hạn trong 1 ngày
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        // SỬA DÒNG NÀY: Phải dùng configService để gọi biến JWT_SECRET ra
+        secret: configService.get<string>('JWT_SECRET') || 'SUPER_SECRET_KEY',
+        signOptions: { expiresIn: '15m' },
+      }),
     }),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
     {
       provide: APP_GUARD,
       useClass: AuthGuard, // Kích hoạt Global Guard
     },
   ],
+  exports: [JwtAuthGuard, JwtAuthGuard],
 })
 export class AuthModule {}
