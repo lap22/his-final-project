@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
-import { PatientsController } from './patients.controller';
-import { PatientsService } from './patients.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PatientService } from './patients.service';
+import { PatientController } from './patients.controller';
+import { Patient } from './entities/patient.entity';
 
 @Module({
-  controllers: [PatientsController],
-  providers: [PatientsService],
+  imports: [
+    TypeOrmModule.forFeature([Patient]), // Đăng ký Entity với TypeORM
+  ],
+  controllers: [PatientController],
+  providers: [PatientService],
+  exports: [PatientService], // Export Service để module Auth có thể gọi khi đăng ký tài khoản
 })
 export class PatientsModule {}
