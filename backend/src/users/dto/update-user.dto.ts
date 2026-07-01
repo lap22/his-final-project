@@ -17,6 +17,7 @@ export class UpdateUserDto {
     message: 'Số điện thoại không đúng định dạng Việt Nam (ví dụ: 0792113333)!',
   })
   phone?: number;
+
   @ApiProperty()
   @IsString()
   @MinLength(6, { message: 'Mật khẩu mới phải có ít nhất 6 ký tự!' })
