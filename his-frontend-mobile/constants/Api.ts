@@ -1,2 +1,2 @@
 // constants/Api.ts
-export const API_URL = 'http://192.168.1.197:3000';
+export const API_URL = 'http://172.28.31.43:3000';
