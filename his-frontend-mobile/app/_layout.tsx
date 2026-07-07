@@ -36,13 +36,18 @@ export default function RootLayout() {
     // Chỉ điều hướng khi CẢ token lẫn FONT chữ đã được load xong hoàn toàn
     if (isLoading || !fontsLoaded) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
+    async function guardRoute() {
+      const token = await SecureStore.getItemAsync('userToken');
+      const inAuthGroup = segments[0] === '(tabs)';
 
-    if (!userToken && inAuthGroup) {
-      router.replace('/login' as any);
-    } else if (userToken && !inAuthGroup) {
-      router.replace('/(tabs)' as any);
+      if (!token && inAuthGroup) {
+        router.replace('/login' as any);
+      } else if (token && !inAuthGroup) {
+        router.replace('/' as any);
+      }
     }
+
+    guardRoute();
   }, [userToken, isLoading, segments, fontsLoaded]); // Thêm fontsLoaded vào dependency
 
   // 3. NẾU FONT CHƯA TẢI XONG THÌ GIỮ MÀN HÌNH CHỜ (Tránh crash màn hình Home)

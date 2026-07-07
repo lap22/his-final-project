@@ -30,7 +30,7 @@ export class AppointmentController {
 
   // API 1: [APP MOBILE] Bệnh nhân tự đặt lịch hẹn khám
   @Post()
-  @Roles('patient')
+  @Roles(3)
   async create(
     @Req() req: AuthenticatedRequest,
     @Body() createDto: CreateAppointmentDto,
@@ -40,28 +40,28 @@ export class AppointmentController {
 
   // API 2: [ADMIN] Xem toàn bộ danh sách lịch hẹn trong bệnh viện
   @Get('admin-all')
-  @Roles('admin')
+  @Roles(1)
   async index() {
     return await this.appointmentService.findAll();
   }
 
   // API 3: [APP MOBILE] Bệnh nhân xem lịch sử đặt hẹn của mình
   @Get('my-appointments')
-  @Roles('patient')
+  @Roles(3)
   async getMyAppointments(@Req() req: AuthenticatedRequest) {
     return await this.appointmentService.findByPatient(req.user.id);
   }
 
   // API 4: [WEB BÁC SĨ] Bác sĩ xem danh sách bệnh nhân đã đặt lịch khám mình
   @Get('doctor-appointments')
-  @Roles('doctor')
+  @Roles(2)
   async getDoctorAppointments(@Req() req: AuthenticatedRequest) {
     return await this.appointmentService.findByDoctor(req.user.id);
   }
 
   // API 5: [WEB/APP] Cập nhật trạng thái lịch hẹn (Xác nhận, Hủy lịch)
   @Patch(':id/status')
-  @Roles('doctor', 'admin', 'patient')
+  @Roles(2, 1, 3)
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateAppointmentStatusDto,

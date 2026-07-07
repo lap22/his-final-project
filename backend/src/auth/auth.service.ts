@@ -10,6 +10,7 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { PatientService } from '../patients/patients.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
+    private patientService: PatientService,
   ) {}
 
   // 1. Hàm Hỗ trợ sinh token và lưu Refresh Token vào DB
@@ -30,7 +32,7 @@ export class AuthService {
     const payload = { sub: userId, email: email, phone: phone, roleId: roleId };
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { expiresIn: '15m' }),
+      this.jwtService.signAsync(payload, { expiresIn: '7d' }),
       this.jwtService.signAsync({ sub: userId }, { expiresIn: '7d' }),
     ]);
 
@@ -68,6 +70,13 @@ export class AuthService {
     const savedUser = await this.userRepository.save(newUser);
 
     // Sinh token dựa trên ID thật vừa sinh ra từ DB
+    if (savedUser.roleId === 3) {
+      await this.patientService.createPatient(
+        savedUser.name ?? savedUser.email,
+        savedUser,
+      );
+    }
+
     const tokens = await this.generateTokens(
       savedUser.id,
       savedUser.email,

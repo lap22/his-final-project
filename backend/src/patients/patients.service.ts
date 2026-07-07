@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Patient } from './entities/patient.entity';
 import { User } from '../auth/entities/user.entity';
 // Import DTO hoàn thiện hồ sơ vào đây
@@ -11,6 +11,7 @@ export class PatientService {
   constructor(
     @InjectRepository(Patient)
     private readonly patientRepository: Repository<Patient>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByUserId(userId: number): Promise<Patient> {
@@ -18,6 +19,14 @@ export class PatientService {
       where: { user: { id: userId } },
     });
     if (!patient) {
+      const user = await this.dataSource.getRepository(User).findOne({
+        where: { id: userId },
+      });
+
+      if (user?.roleId === 3) {
+        return await this.createPatient(user.name ?? user.email, user);
+      }
+
       throw new NotFoundException(
         'Không tìm thấy thông tin hồ sơ bệnh nhân cho tài khoản này!',
       );
