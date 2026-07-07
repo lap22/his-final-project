@@ -12,7 +12,7 @@ interface AuthenticatedRequest extends Request {
     fullName: string;
   };
 }
-ApiTags('Profile');
+@ApiTags('Profile')
 @ApiBearerAuth('JWT-auth')
 @Controller('patient') // Tất cả API trong này sẽ bắt đầu bằng /patient
 export class PatientController {

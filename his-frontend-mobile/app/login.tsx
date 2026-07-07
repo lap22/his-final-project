@@ -42,7 +42,7 @@ export default function LoginScreen() {
 
       if (accessToken) {
         await SecureStore.setItemAsync("userToken", accessToken);
-        router.replace("/(tabs)" as any);
+        router.replace("/" as any);
         return; // Thêm dòng return này để ngắt hoàn toàn hàm, không chạy xuống setLoading(false) ở dưới nữa!
       } else {
         Alert.alert("Thất bại", "Không nhận được mã xác thực từ hệ thống.");
