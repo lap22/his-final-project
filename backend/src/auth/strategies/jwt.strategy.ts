@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity'; // Đường dẫn tới file entity của bạn
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 interface JwtPayload {
   sub: number; // Đổi thành number khớp với ID tự tăng của TypeORM
@@ -18,6 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private configService: ConfigService,
+    private prisma: PrismaService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -29,9 +31,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     console.log('===> Payload giải mã từ JWT:', payload);
-    const user = await this.userRepository.findOne({
+    const legacyUser = await this.userRepository.findOne({
       where: { id: payload.sub },
     });
+    const prismaUser = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, roleId: true },
+    });
+    const user = legacyUser ?? prismaUser;
     console.log('===> User tìm được từ DB:', user);
     if (!user) {
       throw new UnauthorizedException(

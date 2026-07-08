@@ -4,29 +4,31 @@ import {
   ActivityIndicator, RefreshControl, 
   
 } from 'react-native';
-import api, { API_URL } from '@/constants/Api';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getAppointments } from '@/services/appointment.service';
+import { getMyFamilyProfiles } from '@/services/patient.service';
 
 // 1. Khai báo địa chỉ API cố định của bạn
 
-const TOKEN = 'CHUOI_TOKEN_JWT_SAU_KHI_DANG_NHAP'; // Thực tế lấy từ Async Storage
 
 // 2. Định nghĩa Kiểu dữ liệu nhận từ BE
 interface PatientProfile {
+  id: number;
   fullName: string;
-  patientCode: string;
+  patientCode?: string;
 }
 
 interface Appointment {
   id: number;
   appointmentDate: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  status: 'PENDING' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
   reason: string;
   doctor: {
     fullName: string;
-    specialty: string;
+    specialty?: string;
+    specialization?: string;
   };
 }
 
@@ -35,11 +37,13 @@ export default function HomeScreen() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // 3. Hàm bốc dữ liệu song song từ cả 2 API
 const loadDashboardData = async () => {
   try {
     setLoading(true);
+    setError(null);
     // 🚀 Đổi từ AsyncStorage sang SecureStore giống màn hình Login
     const token = await SecureStore.getItemAsync("userToken");
 
@@ -51,22 +55,26 @@ const loadDashboardData = async () => {
       return;
     }
 
-    const headers = { Authorization: `Bearer ${token}` };
+    const family = await getMyFamilyProfiles();
+    const activeProfile = family[0] ?? null;
+    setProfile(activeProfile);
 
-    const [profileRes, appointmentsRes] = await Promise.all([
-      api.get('/patient/profile', { headers }),
-      api.get('/appointment/my-appointments', { headers })
-    ]);
+    if (!activeProfile) {
+      setAppointments([]);
+      return;
+    }
 
-    setProfile(profileRes.data);
-    setAppointments(appointmentsRes.data);
+    const appointmentData = await getAppointments(activeProfile.id);
+    setAppointments(appointmentData as Appointment[]);
 
   } catch (error: any) {
-    console.error("Lỗi lấy dữ liệu Dashboard:", error);
     if (error?.response?.status === 401) {
       await SecureStore.deleteItemAsync("userToken");
       router.replace("/login");
+      return;
     }
+    console.error("Lỗi lấy dữ liệu Dashboard:", error);
+    setError('Khong the tai du lieu trang chu.');
   } finally {
     setLoading(false);
     setRefreshing(false);
@@ -99,6 +107,18 @@ const loadDashboardData = async () => {
         <ActivityIndicator size="large" color="#007bff" />
         <Text style={{ marginTop: 10 }}>Đang tải dữ liệu thực từ DB...</Text>
       </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.errorTitle}>Khong tai duoc du lieu</Text>
+        <Text style={styles.emptyText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadDashboardData}>
+          <Text style={styles.actionText}>Thu lai</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
     );
   }
 
@@ -151,7 +171,7 @@ const loadDashboardData = async () => {
                 </View>
               </View>
 
-              <Text style={styles.specialtyText}>Chuyên khoa: {item.doctor?.specialty}</Text>
+              <Text style={styles.specialtyText}>Chuyen khoa: {item.doctor?.specialty || item.doctor?.specialization || 'Chua cap nhat'}</Text>
               <Text style={styles.timeText}>
                 ⏰ {date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {date.toLocaleDateString('vi-VN')}
               </Text>
@@ -187,5 +207,7 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 14, color: '#27ae60', fontWeight: '600', marginTop: 8 },
   reasonText: { fontSize: 13, color: '#555', marginTop: 5, fontStyle: 'italic' },
   emptyBox: { alignItems: 'center', marginTop: 40 },
-  emptyText: { color: '#7f8c8d' }
+  emptyText: { color: '#7f8c8d' },
+  errorTitle: { color: '#991b1b', fontSize: 18, fontWeight: '800', marginBottom: 8 },
+  retryButton: { marginTop: 16, backgroundColor: '#007bff', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 10 }
 });

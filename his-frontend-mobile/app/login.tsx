@@ -12,9 +12,8 @@ import {
   ScrollView,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import axios from "axios";
-import { API_URL } from "@/constants/Api";
+import { getApiErrorMessage } from "@/services/api";
+import { login } from "@/services/auth.service";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -32,16 +31,15 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       // 2. Gọi API đăng nhập đến Backend NestJS
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await login({
         email: email.trim().toLowerCase(),
         password: password,
       });
 
       // Lấy accessToken từ cấu hình dữ liệu trả về của Backend
-      const { accessToken } = response.data;
+      const { accessToken } = response;
 
       if (accessToken) {
-        await SecureStore.setItemAsync("userToken", accessToken);
         router.replace("/" as any);
         return; // Thêm dòng return này để ngắt hoàn toàn hàm, không chạy xuống setLoading(false) ở dưới nữa!
       } else {
@@ -51,7 +49,7 @@ export default function LoginScreen() {
       // In hẳn lỗi chi tiết ra Terminal của Expo để lập trình viên dễ quan sát
       console.log("🔴 Chi tiết lỗi trả về từ Backend:", error.response?.data);
 
-      let errorMsg = "Đăng nhập thất bại. Vui lòng kiểm tra lại kết nối mạng!";
+      let errorMsg = getApiErrorMessage(error, "Đăng nhập thất bại. Vui lòng kiểm tra lại kết nối mạng!");
 
       // Trường hợp 1: Nếu Backend có phản hồi (Server responded)
       if (error.response) {

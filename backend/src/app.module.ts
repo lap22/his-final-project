@@ -10,6 +10,7 @@ import { AiChatModule } from './ai-chat/ai-chat.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PatientsModule } from './patients/patients.module';
 import { AppointmentModule } from './appointments/appointments.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AppointmentModule } from './appointments/appointments.module';
       synchronize: true,
     }),
     ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     AuthModule,
     UsersModule,
     PatientsModule,

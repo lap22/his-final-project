@@ -1,30 +1,64 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Appointment as PrismaAppointment } from '@prisma/client';
 import { Repository } from 'typeorm';
-import { Appointment } from './entities/appointment.entity';
+import { Appointment as AppointmentEntity } from './entities/appointment.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-status.dto';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { Doctor } from 'src/doctors/entities/doctor.entity';
+import { PrismaService } from '../../prisma/prisma.service';
+import { PatientService } from '../patients/patients.service';
 
 @Injectable()
 export class AppointmentService {
   constructor(
-    @InjectRepository(Appointment)
-    private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(AppointmentEntity)
+    private readonly appointmentRepository: Repository<AppointmentEntity>,
 
     @InjectRepository(Patient)
     private readonly patientRepository: Repository<Patient>,
 
     @InjectRepository(Doctor)
     private readonly doctorRepository: Repository<Doctor>,
+    private readonly prisma: PrismaService,
+    private readonly patientService: PatientService,
   ) {}
 
   // 1. Bệnh nhân đặt lịch hẹn từ App
   async create(
     userId: number,
     dto: CreateAppointmentDto,
-  ): Promise<Appointment> {
+  ): Promise<any> {
+    await this.patientService.assertProfileOwnership(
+      userId,
+      dto.patientProfileId,
+    );
+
+    const [doctor, schedule] = await Promise.all([
+      this.prisma.doctor.findUnique({ where: { id: dto.doctorId } }),
+      this.prisma.doctorSchedule.findUnique({ where: { id: dto.scheduleId } }),
+    ]);
+
+    if (!doctor) {
+      throw new NotFoundException('Doctor not found');
+    }
+
+    if (!schedule || schedule.doctorId !== dto.doctorId) {
+      throw new NotFoundException('Doctor schedule not found');
+    }
+
+    return this.prisma.appointment.create({
+      data: {
+        patientProfileId: dto.patientProfileId,
+        doctorId: dto.doctorId,
+        scheduleId: dto.scheduleId,
+        appointmentDate: new Date(dto.appointmentDate),
+        reason: dto.reason,
+      },
+    });
+
+    /*
     // Tìm Patient ID dựa trên User ID đang đăng nhập
     const patient = await this.patientRepository.findOne({
       where: { user: { id: userId } },
@@ -34,10 +68,10 @@ export class AppointmentService {
     }
 
     // Kiểm tra xem Bác sĩ được chọn có tồn tại không
-    const doctor = await this.doctorRepository.findOne({
+    const legacyDoctor = await this.doctorRepository.findOne({
       where: { id: dto.doctorId },
     });
-    if (!doctor) {
+    if (!legacyDoctor) {
       throw new NotFoundException('Bác sĩ được chọn không tồn tại!');
     }
 
@@ -46,14 +80,15 @@ export class AppointmentService {
       appointmentDate: new Date(dto.appointmentDate),
       reason: dto.reason,
       patient,
-      doctor,
-    });
+      doctor: legacyDoctor,
+    } as any);
 
     return await this.appointmentRepository.save(appointment);
+    */
   }
 
   // 2. Admin lấy toàn bộ lịch hẹn hệ thống
-  async findAll(): Promise<Appointment[]> {
+  async findAll(): Promise<AppointmentEntity[]> {
     return await this.appointmentRepository.find({
       relations: {
         patient: true,
@@ -66,7 +101,7 @@ export class AppointmentService {
   }
 
   // 3. Bệnh nhân xem danh sách lịch sử đặt lịch của chính mình
-  async findByPatient(userId: number): Promise<Appointment[]> {
+  async findByPatient(userId: number): Promise<AppointmentEntity[]> {
     const patient = await this.patientRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -82,7 +117,7 @@ export class AppointmentService {
   }
 
   // 4. Bác sĩ xem danh sách lịch hẹn người ta đặt khám mình
-  async findByDoctor(userId: number): Promise<Appointment[]> {
+  async findByDoctor(userId: number): Promise<AppointmentEntity[]> {
     const doctor = await this.doctorRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -101,7 +136,7 @@ export class AppointmentService {
   async updateStatus(
     id: number,
     dto: UpdateAppointmentStatusDto,
-  ): Promise<Appointment> {
+  ): Promise<AppointmentEntity> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
     });
@@ -111,5 +146,23 @@ export class AppointmentService {
 
     appointment.status = dto.status;
     return await this.appointmentRepository.save(appointment);
+  }
+
+  async findByProfile(
+    userId: number,
+    profileId: number,
+  ): Promise<PrismaAppointment[]> {
+    await this.patientService.assertProfileOwnership(userId, profileId);
+
+    return this.prisma.appointment.findMany({
+      where: { patientProfileId: profileId },
+      include: {
+        doctor: true,
+        schedule: true,
+        symptoms: true,
+        medicalRecord: true,
+      },
+      orderBy: { appointmentDate: 'desc' },
+    });
   }
 }

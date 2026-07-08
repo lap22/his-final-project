@@ -13,10 +13,12 @@ import {
   Appointment,
   AppointmentStatus,
   getAppointments,
-} from '@/services/appointment';
+} from '@/services/appointment.service';
+import { getMyFamilyProfiles, PatientProfile } from '@/services/patient.service';
 
 const statusLabel: Record<AppointmentStatus, string> = {
   PENDING: 'Cho duyet',
+  APPROVED: 'Da duyet',
   CONFIRMED: 'Da xac nhan',
   CANCELLED: 'Da huy',
   COMPLETED: 'Da kham',
@@ -24,6 +26,7 @@ const statusLabel: Record<AppointmentStatus, string> = {
 
 const statusColor: Record<AppointmentStatus, { bg: string; text: string }> = {
   PENDING: { bg: '#fff7ed', text: '#c2410c' },
+  APPROVED: { bg: '#ecfdf5', text: '#047857' },
   CONFIRMED: { bg: '#ecfdf5', text: '#047857' },
   CANCELLED: { bg: '#fef2f2', text: '#b91c1c' },
   COMPLETED: { bg: '#eff6ff', text: '#1d4ed8' },
@@ -53,7 +56,7 @@ function AppointmentCard({ item }: { item: Appointment }) {
             {item.doctor?.fullName ? `BS. ${item.doctor.fullName}` : 'Bac si chua cap nhat'}
           </Text>
           <Text style={styles.specialty}>
-            {item.doctor?.specialty || 'Chuyen khoa chua cap nhat'}
+            {item.doctor?.specialty || item.doctor?.specialization || 'Chuyen khoa chua cap nhat'}
           </Text>
         </View>
 
@@ -73,6 +76,8 @@ function AppointmentCard({ item }: { item: Appointment }) {
 }
 
 export default function AppointmentsScreen() {
+  const [profiles, setProfiles] = useState<PatientProfile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<PatientProfile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,7 +93,18 @@ export default function AppointmentsScreen() {
     setError(null);
 
     try {
-      const data = await getAppointments();
+      const family = await getMyFamilyProfiles();
+      const profile = family[0] ?? null;
+
+      setProfiles(family);
+      setSelectedProfile(profile);
+
+      if (!profile) {
+        setAppointments([]);
+        return;
+      }
+
+      const data = await getAppointments(profile.id);
       setAppointments(Array.isArray(data) ? data : []);
     } catch {
       setError('Khong the tai danh sach lich hen.');
@@ -144,14 +160,22 @@ export default function AppointmentsScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.title}>Lich hen</Text>
-            <Text style={styles.subtitle}>{appointments.length} lich hen</Text>
+            <Text style={styles.subtitle}>
+              {selectedProfile?.fullName
+                ? `${selectedProfile.fullName} - ${appointments.length} lich hen`
+                : `${profiles.length} ho so gia dinh`}
+            </Text>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>Chua co lich hen</Text>
+            <Text style={styles.emptyTitle}>
+              {selectedProfile ? 'Chua co lich hen' : 'Chua co ho so benh nhan'}
+            </Text>
             <Text style={styles.emptyText}>
-              Danh sach lich hen cua ban se hien thi tai day.
+              {selectedProfile
+                ? 'Danh sach lich hen cua ho so nay se hien thi tai day.'
+                : 'Hay tao ho so benh nhan de xem lich kham theo tung thanh vien gia dinh.'}
             </Text>
           </View>
         }
