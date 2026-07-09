@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import axios from 'axios';
-import { API_URL } from '@/constants/Api';
+import { getApiErrorMessage } from '@/services/api';
+import { register } from '@/services/auth.service';
 import { Link, useRouter } from 'expo-router'; // Thay đổi từ router sang useRouter
 
 export default function RegisterScreen() {
@@ -20,7 +20,7 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      await register({
         name: name.trim(),
         email: email.trim(),
         phone: phone,
@@ -48,7 +48,7 @@ export default function RegisterScreen() {
       );
 
     } catch (error: any) {
-      let errorMsg = 'Đăng ký thất bại. Vui lòng thử lại!';
+      let errorMsg = getApiErrorMessage(error, 'Đăng ký thất bại. Vui lòng thử lại!');
       const serverResponse = error.response?.data?.message;
 
       if (Array.isArray(serverResponse)) {

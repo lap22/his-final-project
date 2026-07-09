@@ -67,7 +67,7 @@ model User {
   roleId Int @default(3)
   role   Role @relation(fields: [roleId], references: [id])
 
-  patient Patient?
+  patientProfiles PatientProfile[]
   doctor  Doctor?
   refreshTokens RefreshToken[]
 
@@ -78,12 +78,16 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-model Patient {
+model PatientProfile {
   id Int @id @default(autoincrement())
 
-  userId Int  @unique
+  userId Int
   user   User @relation(fields: [userId], references: [id])
 
+  fullName String
+  phone    String?
+  gender   Gender?
+  birthday DateTime?
   address   String?
   bloodType String?
 
@@ -96,6 +100,8 @@ model Patient {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Doctor {
@@ -142,8 +148,8 @@ model DoctorSchedule {
 model Appointment {
   id Int @id @default(autoincrement())
 
-  patientId Int
-  patient   Patient @relation(fields: [patientId], references: [id])
+  patientProfileId Int
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
   doctorId Int
   doctor   Doctor @relation(fields: [doctorId], references: [id])
@@ -186,9 +192,9 @@ model MedicalRecord {
 
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
-  patientId Int
+  patientProfileId Int
 
-  patient Patient @relation(fields: [patientId], references: [id])
+  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
 
   doctorId Int
 
@@ -242,9 +248,9 @@ model MedicalFile {
 model AIChatHistory {
   id Int @id @default(autoincrement())
 
-  patientId Int
+  patientProfileId Int
 
-  patient Patient @relation(fields: [patientId], references: [id])
+  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
 
   question String
 

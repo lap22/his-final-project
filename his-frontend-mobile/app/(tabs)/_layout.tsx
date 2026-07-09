@@ -20,6 +20,20 @@ export default function TabLayout() {
         }}
       />
       {/* Bạn có thể thêm các tab khác như ai-chat, appointments ở đây sau */}
+      <Tabs.Screen
+        name="appointments"
+        options={{
+          title: 'Lich hen',
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="two"
+        options={{
+          title: 'Benh an',
+          tabBarIcon: ({ color, size }) => <Ionicons name="document-text" size={size} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

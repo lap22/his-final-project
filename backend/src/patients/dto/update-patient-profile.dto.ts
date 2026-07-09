@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Gender } from '@prisma/client';
 import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
 
 // Định nghĩa Enum nhóm máu để tránh bệnh nhân nhập bậy

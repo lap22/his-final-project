@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PatientProfile } from '@prisma/client';
 import { DataSource, Repository } from 'typeorm';
 import { Patient } from './entities/patient.entity';
 import { User } from '../auth/entities/user.entity';
 // Import DTO hoàn thiện hồ sơ vào đây
 import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreatePatientProfileDto } from './dto/create-patient-profile.dto';
+import { UpdateFamilyPatientProfileDto } from './dto/update-family-patient-profile.dto';
 
 @Injectable()
 export class PatientService {
@@ -12,6 +16,7 @@ export class PatientService {
     @InjectRepository(Patient)
     private readonly patientRepository: Repository<Patient>,
     private readonly dataSource: DataSource,
+    private readonly prisma: PrismaService,
   ) {}
 
   async findByUserId(userId: number): Promise<Patient> {
@@ -66,5 +71,104 @@ export class PatientService {
 
     // 3. Lưu lại thực thể đã cập nhật vào Database
     return this.patientRepository.save(patient);
+  }
+
+  async createFamilyProfile(
+    userId: number,
+    dto: CreatePatientProfileDto,
+  ): Promise<PatientProfile> {
+    return this.prisma.patientProfile.create({
+      data: {
+        userId,
+        fullName: dto.fullName,
+        phone: dto.phone,
+        gender: dto.gender,
+        birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+        address: dto.address,
+        bloodType: dto.bloodType,
+        insuranceNumber: dto.insuranceNumber,
+        emergencyContact: dto.emergencyContact,
+      },
+    });
+  }
+
+  async findMyFamily(userId: number): Promise<PatientProfile[]> {
+    return this.prisma.patientProfile.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async findFamilyProfileById(
+    userId: number,
+    id: number,
+  ): Promise<PatientProfile> {
+    const profile = await this.prisma.patientProfile.findUnique({
+      where: { id },
+    });
+    this.ensureProfileBelongsToUser(profile, userId);
+    return profile;
+  }
+
+  async updateFamilyProfile(
+    userId: number,
+    id: number,
+    dto: UpdateFamilyPatientProfileDto,
+  ): Promise<PatientProfile> {
+    const profile = await this.prisma.patientProfile.findUnique({
+      where: { id },
+    });
+    this.ensureProfileBelongsToUser(profile, userId);
+
+    return this.prisma.patientProfile.update({
+      where: { id },
+      data: {
+        fullName: dto.fullName,
+        phone: dto.phone,
+        gender: dto.gender,
+        birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+        address: dto.address,
+        bloodType: dto.bloodType,
+        insuranceNumber: dto.insuranceNumber,
+        emergencyContact: dto.emergencyContact,
+      },
+    });
+  }
+
+  async removeFamilyProfile(
+    userId: number,
+    id: number,
+  ): Promise<{ message: string }> {
+    const profile = await this.prisma.patientProfile.findUnique({
+      where: { id },
+    });
+    this.ensureProfileBelongsToUser(profile, userId);
+
+    await this.prisma.patientProfile.delete({ where: { id } });
+    return { message: 'Patient profile deleted successfully' };
+  }
+
+  async assertProfileOwnership(
+    userId: number,
+    profileId: number,
+  ): Promise<PatientProfile> {
+    const profile = await this.prisma.patientProfile.findUnique({
+      where: { id: profileId },
+    });
+    this.ensureProfileBelongsToUser(profile, userId);
+    return profile;
+  }
+
+  private ensureProfileBelongsToUser(
+    profile: PatientProfile | null,
+    userId: number,
+  ): asserts profile is PatientProfile {
+    if (!profile) {
+      throw new NotFoundException('Patient profile not found');
+    }
+
+    if (profile.userId !== userId) {
+      throw new ForbiddenException('You cannot access this patient profile');
+    }
   }
 }
