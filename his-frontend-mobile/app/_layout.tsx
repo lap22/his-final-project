@@ -38,12 +38,12 @@ export default function RootLayout() {
 
     async function guardRoute() {
       const token = await SecureStore.getItemAsync('userToken');
-      const inAuthGroup = segments[0] === '(tabs)';
+      const isPublicRoute = segments[0] === 'login' || segments[0] === 'register';
 
-      if (!token && inAuthGroup) {
+      if (!token && !isPublicRoute) {
         router.replace('/login' as any);
-      } else if (token && !inAuthGroup) {
-        router.replace('/' as any);
+      } else if (token && isPublicRoute) {
+        router.replace('/home' as any);
       }
     }
 
@@ -64,6 +64,9 @@ export default function RootLayout() {
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="register" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="booking-flow" options={{ headerShown: false }} />
+      <Stack.Screen name="add-edit-patient" options={{ headerShown: false }} />
+      <Stack.Screen name="medical-record-detail/[recordId]" options={{ headerShown: false }} />
     </Stack>
   );
 }

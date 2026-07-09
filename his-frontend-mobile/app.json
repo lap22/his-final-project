@@ -38,9 +38,6 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "apiBaseUrl": "http://172.27.192.1:3000"
     }
   }
 }

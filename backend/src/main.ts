@@ -14,6 +14,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.enableCors();
 
   // 3. Cấu hình Swagger tài liệu API
   const config = new DocumentBuilder()
@@ -38,7 +39,6 @@ async function bootstrap() {
   // 4. Hàm listen kích hoạt server phải luôn luôn nằm CUỐI CÙNG
   const port = process.env.PORT ?? 3000;
   await app.listen(3000, '0.0.0.0');
-  app.enableCors();
   console.log(`🚀 Server đang chạy tại: http://localhost:${port}`);
   console.log(`📝 Tài liệu Swagger API tại: http://localhost:${port}/api`);
 }

@@ -1,4 +1,4 @@
-import api from './api';
+import api, { getApiErrorMessage } from './api';
 
 export interface PatientProfile {
   id: number;
@@ -11,6 +11,8 @@ export interface PatientProfile {
   bloodType?: string | null;
   insuranceNumber?: string | null;
   emergencyContact?: string | null;
+  relationship?: string | null;
+  medicalHistory?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -24,11 +26,17 @@ export interface CreatePatientProfilePayload {
   bloodType?: string;
   insuranceNumber?: string;
   emergencyContact?: string;
+  relationship?: string;
+  medicalHistory?: string;
 }
 
 export async function getMyFamilyProfiles(): Promise<PatientProfile[]> {
   const response = await api.get<PatientProfile[]>('/patient-profiles/my-family');
   return Array.isArray(response.data) ? response.data : [];
+}
+
+export async function getPatients(): Promise<PatientProfile[]> {
+  return getMyFamilyProfiles();
 }
 
 export async function getPatientProfile(id: number): Promise<PatientProfile> {
@@ -54,4 +62,8 @@ export async function updatePatientProfile(
 export async function deletePatientProfile(id: number): Promise<{ message: string }> {
   const response = await api.delete<{ message: string }>(`/patient-profiles/${id}`);
   return response.data;
+}
+
+export function getPatientErrorMessage(error: unknown, fallback: string) {
+  return getApiErrorMessage(error, fallback);
 }

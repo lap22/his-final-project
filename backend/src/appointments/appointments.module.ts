@@ -7,6 +7,8 @@ import { Doctor } from 'src/doctors/entities/doctor.entity';
 import { AppointmentController } from './appointments.controller';
 import { AppointmentService } from './appointments.service';
 import { AppointmentsQueryController } from './appointments-query.controller';
+import { BookingController } from './booking.controller';
+import { BookingService } from './booking.service';
 import { PatientsModule } from '../patients/patients.module';
 
 @Module({
@@ -14,7 +16,7 @@ import { PatientsModule } from '../patients/patients.module';
     TypeOrmModule.forFeature([Appointment, Patient, Doctor]), // Khai báo đầy đủ để inject repository thành công
     PatientsModule,
   ],
-  controllers: [AppointmentController, AppointmentsQueryController],
-  providers: [AppointmentService],
+  controllers: [AppointmentController, AppointmentsQueryController, BookingController],
+  providers: [AppointmentService, BookingService],
 })
 export class AppointmentModule {}

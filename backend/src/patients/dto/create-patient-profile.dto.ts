@@ -49,4 +49,14 @@ export class CreatePatientProfileDto {
   @IsString()
   @IsOptional()
   emergencyContact?: string;
+
+  @ApiPropertyOptional({ example: 'Con' })
+  @IsString()
+  @IsOptional()
+  relationship?: string;
+
+  @ApiPropertyOptional({ example: 'Dị ứng penicillin, tiền sử hen suyễn' })
+  @IsString()
+  @IsOptional()
+  medicalHistory?: string;
 }
