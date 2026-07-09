@@ -26,6 +26,22 @@ interface AuthenticatedRequest extends Request {
 export class AppointmentsQueryController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
+  @Get('today')
+  async findToday(@Req() req: AuthenticatedRequest): Promise<Appointment[]> {
+    return this.appointmentService.findTodayByUser(req.user.id);
+  }
+
+  @Get('queue')
+  async findQueueByAppointment(
+    @Req() req: AuthenticatedRequest,
+    @Query('appointmentId', ParseIntPipe) appointmentId: number,
+  ) {
+    return this.appointmentService.getQueueByAppointment(
+      req.user.id,
+      appointmentId,
+    );
+  }
+
   @Get()
   async findByProfile(
     @Req() req: AuthenticatedRequest,

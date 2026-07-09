@@ -3,12 +3,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Doctor } from './entities/doctor.entity';
 import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto';
+import { PrismaService } from '../../prisma/prisma.service';
+
+export interface SpecialtySummary {
+  id: string;
+  name: string;
+  doctorCount: number;
+}
 
 @Injectable()
 export class DoctorService {
   constructor(
     @InjectRepository(Doctor)
     private readonly doctorRepository: Repository<Doctor>,
+    private readonly prisma: PrismaService,
   ) {}
 
   // 1. ROUTE INDEX: Lấy danh sách toàn bộ bác sĩ (Lấy dữ liệu thật từ DB)
@@ -30,6 +38,34 @@ export class DoctorService {
       },
       order: { fullName: 'ASC' }, // Sắp xếp theo tên từ A-Z
     });
+  }
+
+  async findSpecialties(): Promise<SpecialtySummary[]> {
+    const doctors = await this.prisma.doctor.findMany({
+      select: {
+        specialization: true,
+      },
+    });
+
+    const specialtyCounts = new Map<string, number>();
+
+    doctors.forEach((doctor) => {
+      const specialty = doctor.specialization?.trim();
+
+      if (!specialty) {
+        return;
+      }
+
+      specialtyCounts.set(specialty, (specialtyCounts.get(specialty) ?? 0) + 1);
+    });
+
+    return Array.from(specialtyCounts.entries())
+      .sort(([firstName], [secondName]) => firstName.localeCompare(secondName))
+      .map(([name, doctorCount]) => ({
+        id: name.toLowerCase().replace(/\s+/g, '-'),
+        name,
+        doctorCount,
+      }));
   }
 
   // 2. Xem chi tiết thông tin 1 bác sĩ cụ thể theo ID

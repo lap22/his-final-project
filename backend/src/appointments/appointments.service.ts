@@ -10,6 +10,16 @@ import { Doctor } from 'src/doctors/entities/doctor.entity';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatientService } from '../patients/patients.service';
 
+export interface QueueInfo {
+  doctorName: string;
+  specialtyName: string;
+  roomName: string;
+  patientQueueNumber: number;
+  currentQueueNumber: number;
+  estimatedWaitingCount: number;
+  status: string;
+}
+
 @Injectable()
 export class AppointmentService {
   constructor(
@@ -164,5 +174,118 @@ export class AppointmentService {
       },
       orderBy: { appointmentDate: 'desc' },
     });
+  }
+
+  async findTodayByUser(userId: number): Promise<PrismaAppointment[]> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    const profiles = await this.prisma.patientProfile.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (profiles.length === 0) {
+      return [];
+    }
+
+    return this.prisma.appointment.findMany({
+      where: {
+        patientProfileId: {
+          in: profiles.map((profile) => profile.id),
+        },
+        appointmentDate: {
+          gte: startOfDay,
+          lt: endOfDay,
+        },
+      },
+      include: {
+        doctor: {
+          include: {
+            user: true,
+          },
+        },
+        schedule: true,
+        patientProfile: true,
+        symptoms: true,
+      },
+      orderBy: [
+        { appointmentDate: 'asc' },
+        { id: 'asc' },
+      ],
+    });
+  }
+
+  async getQueueByAppointment(
+    userId: number,
+    appointmentId: number,
+  ): Promise<QueueInfo> {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: {
+          include: {
+            user: true,
+          },
+        },
+        schedule: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    await this.patientService.assertProfileOwnership(
+      userId,
+      appointment.patientProfileId,
+    );
+
+    const startOfDay = new Date(appointment.appointmentDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    const queueAppointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorId: appointment.doctorId,
+        scheduleId: appointment.scheduleId,
+        appointmentDate: {
+          gte: startOfDay,
+          lt: endOfDay,
+        },
+        status: {
+          not: 'CANCELLED',
+        },
+      },
+      orderBy: [
+        { appointmentDate: 'asc' },
+        { id: 'asc' },
+      ],
+    });
+
+    const patientIndex = queueAppointments.findIndex(
+      (item) => item.id === appointment.id,
+    );
+    const currentIndex = queueAppointments.findIndex(
+      (item) => item.status !== 'COMPLETED',
+    );
+
+    const patientQueueNumber = patientIndex >= 0 ? patientIndex + 1 : 0;
+    const currentQueueNumber = currentIndex >= 0 ? currentIndex + 1 : patientQueueNumber;
+
+    return {
+      doctorName: appointment.doctor.user?.fullName ?? 'Bác sĩ chưa cập nhật',
+      specialtyName: appointment.doctor.specialization,
+      roomName: 'Phòng khám chưa cập nhật',
+      patientQueueNumber,
+      currentQueueNumber,
+      estimatedWaitingCount: Math.max(patientQueueNumber - currentQueueNumber, 0),
+      status: appointment.status,
+    };
   }
 }

@@ -119,4 +119,35 @@ export class MedicalRecordService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async findOneForUser(
+    userId: number,
+    recordId: number,
+  ): Promise<PrismaMedicalRecord> {
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id: recordId },
+      include: {
+        appointment: true,
+        patientProfile: true,
+        doctor: {
+          include: {
+            user: true,
+          },
+        },
+        prescriptions: true,
+        files: true,
+      },
+    });
+
+    if (!record) {
+      throw new NotFoundException('Medical record not found');
+    }
+
+    this.patientService.ensureProfileBelongsToUser(
+      record.patientProfile,
+      userId,
+    );
+
+    return record;
+  }
 }

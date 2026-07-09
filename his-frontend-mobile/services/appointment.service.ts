@@ -18,10 +18,17 @@ export interface Appointment {
       email?: string | null;
     } | null;
   } | null;
+  hospitalName?: string | null;
+  hospital?: {
+    name?: string | null;
+  } | null;
   patientProfile?: {
     id: number;
     fullName?: string | null;
   } | null;
+  schedule?: unknown;
+  symptoms?: unknown[];
+  medicalRecord?: unknown;
 }
 
 export interface CreateAppointmentPayload {
@@ -38,6 +45,30 @@ export async function getAppointments(profileId: number): Promise<Appointment[]>
   });
 
   return Array.isArray(response.data) ? response.data : [];
+}
+
+export async function getUpcomingAppointment(profileIds: number[]): Promise<Appointment | null> {
+  if (profileIds.length === 0) {
+    return null;
+  }
+
+  const appointmentGroups = await Promise.all(
+    profileIds.map((profileId) => getAppointments(profileId)),
+  );
+
+  const now = Date.now();
+
+  return appointmentGroups
+    .flat()
+    .filter((appointment) => {
+      const timestamp = new Date(appointment.appointmentDate).getTime();
+      return Number.isFinite(timestamp) && timestamp >= now;
+    })
+    .sort(
+      (first, second) =>
+        new Date(first.appointmentDate).getTime() -
+        new Date(second.appointmentDate).getTime(),
+    )[0] ?? null;
 }
 
 export async function createAppointment(

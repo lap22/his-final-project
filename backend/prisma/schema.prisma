@@ -93,6 +93,8 @@ model PatientProfile {
 
   emergencyContact String?
   insuranceNumber  String?
+  relationship     String?
+  medicalHistory   String?
 
   appointments    Appointment[]
   medicalRecords  MedicalRecord[]
