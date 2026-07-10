@@ -36,10 +36,7 @@ export class AppointmentService {
   ) {}
 
   // 1. Bệnh nhân đặt lịch hẹn từ App
-  async create(
-    userId: number,
-    dto: CreateAppointmentDto,
-  ): Promise<any> {
+  async create(userId: number, dto: CreateAppointmentDto): Promise<any> {
     await this.patientService.assertProfileOwnership(
       userId,
       dto.patientProfileId,
@@ -212,10 +209,7 @@ export class AppointmentService {
         patientProfile: true,
         symptoms: true,
       },
-      orderBy: [
-        { appointmentDate: 'asc' },
-        { id: 'asc' },
-      ],
+      orderBy: [{ appointmentDate: 'asc' }, { id: 'asc' }],
     });
   }
 
@@ -262,10 +256,7 @@ export class AppointmentService {
           not: 'CANCELLED',
         },
       },
-      orderBy: [
-        { appointmentDate: 'asc' },
-        { id: 'asc' },
-      ],
+      orderBy: [{ appointmentDate: 'asc' }, { id: 'asc' }],
     });
 
     const patientIndex = queueAppointments.findIndex(
@@ -276,7 +267,8 @@ export class AppointmentService {
     );
 
     const patientQueueNumber = patientIndex >= 0 ? patientIndex + 1 : 0;
-    const currentQueueNumber = currentIndex >= 0 ? currentIndex + 1 : patientQueueNumber;
+    const currentQueueNumber =
+      currentIndex >= 0 ? currentIndex + 1 : patientQueueNumber;
 
     return {
       doctorName: appointment.doctor.user?.fullName ?? 'Bác sĩ chưa cập nhật',
@@ -284,7 +276,10 @@ export class AppointmentService {
       roomName: 'Phòng khám chưa cập nhật',
       patientQueueNumber,
       currentQueueNumber,
-      estimatedWaitingCount: Math.max(patientQueueNumber - currentQueueNumber, 0),
+      estimatedWaitingCount: Math.max(
+        patientQueueNumber - currentQueueNumber,
+        0,
+      ),
       status: appointment.status,
     };
   }
