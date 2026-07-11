@@ -12,4 +12,18 @@ export const theme = createTheme({
   shape: {
     borderRadius: 12,
   },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          transition: 'background-color 160ms ease, color 160ms ease',
+        },
+        '@media (prefers-color-scheme: dark)': {
+          ':root': {
+            colorScheme: 'dark',
+          },
+        },
+      },
+    },
+  },
 })
