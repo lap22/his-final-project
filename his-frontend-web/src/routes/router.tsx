@@ -12,6 +12,8 @@ import { AdminDoctorsPage } from '@/pages/admin/AdminDoctorsPage'
 import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { ForbiddenPage } from '@/pages/common/ForbiddenPage'
+import { NotFoundPage } from '@/pages/common/NotFoundPage'
 import { DoctorAppointmentsPage } from '@/pages/doctor/DoctorAppointmentsPage'
 import { DoctorDashboardPage } from '@/pages/doctor/DoctorDashboardPage'
 import { DoctorMedicalRecordsPage } from '@/pages/doctor/DoctorMedicalRecordsPage'
@@ -35,6 +37,10 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
       },
     ],
+  },
+  {
+    path: ROUTES.FORBIDDEN,
+    element: <ForbiddenPage />,
   },
   {
     path: ROUTES.DOCTOR.ROOT,
@@ -111,5 +117,9 @@ export const router = createBrowserRouter([
         element: <AdminSettingsPage />,
       },
     ],
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ])

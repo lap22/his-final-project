@@ -2,6 +2,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { type PropsWithChildren } from 'react'
 import { ToastContainer } from 'react-toastify'
+import { GlobalLoading } from '@/components/loading/GlobalLoading'
 import { AuthProvider } from '@/providers/AuthProvider'
 import { queryClient } from '@/providers/queryClient'
 import { theme } from '@/theme/theme'
@@ -13,8 +14,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       <ThemeProvider theme={theme}>
         <AuthProvider>
           <CssBaseline />
+          <GlobalLoading />
           {children}
-          <ToastContainer position="top-right" autoClose={3000} />
+          <ToastContainer position="top-right" autoClose={3000} theme="colored" />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

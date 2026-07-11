@@ -2,7 +2,6 @@ import { Navigate } from 'react-router-dom'
 import { type PropsWithChildren } from 'react'
 import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
-import { getLoginRedirectPath } from '@/routes/auth'
 import { type UserRole } from '@/types/auth'
 
 interface RoleRouteProps extends PropsWithChildren {
@@ -17,7 +16,7 @@ export function RoleRoute({ allowedRoles, children }: RoleRouteProps) {
   }
 
   if (!allowedRoles.includes(role)) {
-    return <Navigate to={getLoginRedirectPath(role)} replace />
+    return <Navigate to={ROUTES.FORBIDDEN} replace />
   }
 
   return children
